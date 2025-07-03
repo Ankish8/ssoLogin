@@ -18,6 +18,25 @@ type Step = 'signup' | 'email-sent' | 'verified' | 'org-setup' | 'domain-verific
 
 function App() {
   const [step, setStep] = useState<Step>('signup')
+  
+  // Helper function to get the next step in the flow
+  const getNextStep = (currentStep: Step): Step | null => {
+    const flowOrder: Step[] = [
+      'signup',
+      'email-sent', 
+      'verified',
+      'org-setup',
+      'domain-verification',
+      'org-creation',
+      'dashboard',
+      'sso-protocol-selection',
+      'sso-config',
+      'user-provisioning'
+    ]
+    
+    const currentIndex = flowOrder.indexOf(currentStep)
+    return currentIndex < flowOrder.length - 1 ? flowOrder[currentIndex + 1] : null
+  }
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -88,9 +107,6 @@ function App() {
     }
   }
 
-  const handleVerifyEmail = () => {
-    setStep('verified')
-  }
 
   const handleLogin = () => {
     setStep('org-setup')
@@ -314,7 +330,10 @@ function App() {
           </Button>
         </div>
         <div className="fixed bottom-4 right-4 z-20">
-          <Button variant="ghost" onClick={handleVerifyEmail} className="text-xs text-muted-foreground">
+          <Button variant="ghost" onClick={() => {
+            const nextStep = getNextStep(step)
+            if (nextStep) setStep(nextStep)
+          }} className="text-xs text-muted-foreground">
             Skip to next step →
           </Button>
         </div>
@@ -354,7 +373,10 @@ function App() {
           </Button>
         </div>
         <div className="fixed bottom-4 right-4 z-20">
-          <Button variant="ghost" onClick={() => setStep('org-setup')} className="text-xs text-muted-foreground">
+          <Button variant="ghost" onClick={() => {
+            const nextStep = getNextStep(step)
+            if (nextStep) setStep(nextStep)
+          }} className="text-xs text-muted-foreground">
             Skip to next step →
           </Button>
         </div>
@@ -428,7 +450,10 @@ function App() {
           </Button>
         </div>
         <div className="fixed bottom-4 right-4 z-20">
-          <Button variant="ghost" onClick={handleContinueSetup} className="text-xs text-muted-foreground">
+          <Button variant="ghost" onClick={() => {
+            const nextStep = getNextStep(step)
+            if (nextStep) setStep(nextStep)
+          }} className="text-xs text-muted-foreground">
             Skip to next step →
           </Button>
         </div>
@@ -613,7 +638,10 @@ function App() {
           </Button>
         </div>
         <div className="fixed bottom-4 right-4 z-20">
-          <Button variant="ghost" onClick={() => setStep('org-creation')} className="text-xs text-muted-foreground">
+          <Button variant="ghost" onClick={() => {
+            const nextStep = getNextStep(step)
+            if (nextStep) setStep(nextStep)
+          }} className="text-xs text-muted-foreground">
             Skip to next step →
           </Button>
         </div>
@@ -714,7 +742,10 @@ function App() {
           </Button>
         </div>
         <div className="fixed bottom-4 right-4 z-20">
-          <Button variant="ghost" onClick={() => setStep('dashboard')} className="text-xs text-muted-foreground">
+          <Button variant="ghost" onClick={() => {
+            const nextStep = getNextStep(step)
+            if (nextStep) setStep(nextStep)
+          }} className="text-xs text-muted-foreground">
             Skip to next step →
           </Button>
         </div>
@@ -893,8 +924,11 @@ function App() {
           </Button>
         </div>
         <div className="fixed bottom-4 right-4 z-20">
-          <Button variant="ghost" onClick={() => setStep('dashboard')} className="text-xs text-muted-foreground">
-            Skip to dashboard →
+          <Button variant="ghost" onClick={() => {
+            const nextStep = getNextStep(step)
+            if (nextStep) setStep(nextStep)
+          }} className="text-xs text-muted-foreground">
+            Skip to next step →
           </Button>
         </div>
       </InteractiveBackground>
@@ -1552,8 +1586,11 @@ MIIC...
           </Button>
         </div>
         <div className="fixed bottom-4 right-4 z-20">
-          <Button variant="ghost" onClick={() => setStep('dashboard')} className="text-xs text-muted-foreground">
-            Skip to dashboard →
+          <Button variant="ghost" onClick={() => {
+            const nextStep = getNextStep(step)
+            if (nextStep) setStep(nextStep)
+          }} className="text-xs text-muted-foreground">
+            Skip to next step →
           </Button>
         </div>
       </InteractiveBackground>
@@ -2031,8 +2068,11 @@ MIIC...
           </Button>
         </div>
         <div className="fixed bottom-4 right-4 z-20">
-          <Button variant="ghost" onClick={() => setStep('dashboard')} className="text-xs text-muted-foreground">
-            Skip to dashboard →
+          <Button variant="ghost" onClick={() => {
+            const nextStep = getNextStep(step)
+            if (nextStep) setStep(nextStep)
+          }} className="text-xs text-muted-foreground">
+            Skip to next step →
           </Button>
         </div>
       </InteractiveBackground>
@@ -2257,7 +2297,10 @@ MIIC...
         </Button>
       </div>
       <div className="fixed bottom-4 right-4 z-20">
-        <Button variant="ghost" onClick={() => setStep('email-sent')} className="text-xs text-muted-foreground">
+        <Button variant="ghost" onClick={() => {
+          const nextStep = getNextStep(step)
+          if (nextStep) setStep(nextStep)
+        }} className="text-xs text-muted-foreground">
           Skip to next step →
         </Button>
       </div>
