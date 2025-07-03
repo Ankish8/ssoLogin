@@ -741,7 +741,10 @@ function App() {
             ← Previous step
           </Button>
         </div>
-        <div className="fixed bottom-4 right-4 z-20">
+        <div className="fixed bottom-4 right-4 z-20 flex space-x-2">
+          <Button variant="ghost" onClick={() => setStep('sso-protocol-selection')} className="text-xs text-primary font-medium">
+            🚀 Skip to SSO Setup
+          </Button>
           <Button variant="ghost" onClick={() => {
             const nextStep = getNextStep(step)
             if (nextStep) setStep(nextStep)
@@ -2116,6 +2119,34 @@ MIIC...
               </div>
             </div>
 
+            {/* Phase 2 Banner */}
+            {!ssoProtocol && (
+              <div className="max-w-2xl mx-auto">
+                <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{backgroundColor: '#581C60'}}>
+                        <Shield className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-foreground">Ready for Phase 2: SSO Configuration</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Configure SAML or OIDC authentication and user provisioning for your organization
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={() => setStep('sso-protocol-selection')}
+                        className="h-11 px-6"
+                        style={{backgroundColor: '#581C60', borderColor: '#581C60'}}
+                      >
+                        🚀 Start SSO Setup
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <Card className="p-6">
@@ -2296,7 +2327,10 @@ MIIC...
           ← Previous step
         </Button>
       </div>
-      <div className="fixed bottom-4 right-4 z-20">
+      <div className="fixed bottom-4 right-4 z-20 flex space-x-2">
+        <Button variant="ghost" onClick={() => setStep('sso-protocol-selection')} className="text-xs text-primary font-medium">
+          🚀 Skip to SSO Setup
+        </Button>
         <Button variant="ghost" onClick={() => {
           const nextStep = getNextStep(step)
           if (nextStep) setStep(nextStep)
