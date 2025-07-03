@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle, Mail, Building, Shield, Users, Zap, Loader2, X, Check, Copy, Upload, AlertCircle, HelpCircle } from 'lucide-react'
 import { InteractiveBackground } from '@/components/ui/interactive-background'
 
-type Step = 'signup' | 'email-sent' | 'verified' | 'org-setup' | 'domain-verification' | 'org-creation' | 'dashboard' | 'sso-protocol-selection' | 'sso-config' | 'sso-config'
+type Step = 'signup' | 'email-sent' | 'verified' | 'org-setup' | 'domain-verification' | 'org-creation' | 'dashboard' | 'sso-protocol-selection' | 'sso-config' | 'user-provisioning'
 
 function App() {
   const [step, setStep] = useState<Step>('signup')
@@ -33,6 +33,39 @@ function App() {
     issuerUrl: '',
     clientId: '',
     clientSecret: ''
+  })
+  
+  // User Provisioning Configuration
+  const [provisioningConfig, setProvisioningConfig] = useState({
+    // JIT (Just-In-Time) Provisioning
+    jitEnabled: true,
+    jitCreateUsers: true,
+    jitUpdateUsers: true,
+    jitDefaultRole: 'user',
+    
+    // SCIM Configuration
+    scimEnabled: false,
+    scimEndpoint: '',
+    scimToken: '',
+    scimVersion: '2.0',
+    
+    // Attribute Mapping
+    attributeMapping: {
+      email: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
+      firstName: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname',
+      lastName: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname',
+      displayName: 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
+      role: 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'
+    },
+    
+    // Deprovisioning Rules
+    deprovisionOnSuspend: true,
+    deprovisionOnDelete: true,
+    retentionDays: 30,
+    
+    // Default Permissions
+    defaultPermissions: ['read:profile', 'read:organization'],
+    autoAssignGroups: []
   })
   
   // UX Enhancement states
@@ -873,8 +906,8 @@ function App() {
     
     const handleSsoConfigSubmit = (e: React.FormEvent) => {
       e.preventDefault()
-      // TODO: Save configuration and proceed to test step
-      setStep('dashboard') // For now, go to dashboard
+      // Save configuration and proceed to user provisioning
+      setStep('user-provisioning')
     }
 
     const handleFormKeyDown = (e: React.KeyboardEvent) => {
@@ -1527,6 +1560,485 @@ MIIC...
     )
   }
 
+  if (step === 'user-provisioning') {
+    const handleProvisioningSubmit = (e: React.FormEvent) => {
+      e.preventDefault()
+      // Save provisioning configuration and proceed to dashboard
+      setStep('dashboard')
+    }
+
+    const handleProvisioningFieldChange = (field: string, value: any) => {
+      setProvisioningConfig(prev => ({ ...prev, [field]: value }))
+      
+      // Auto-save simulation
+      setAutoSaveStatus('saving')
+      setTimeout(() => setAutoSaveStatus('saved'), 1000)
+    }
+
+    const handleAttributeMappingChange = (attribute: string, value: string) => {
+      setProvisioningConfig(prev => ({
+        ...prev,
+        attributeMapping: { ...prev.attributeMapping, [attribute]: value }
+      }))
+      
+      // Auto-save simulation
+      setAutoSaveStatus('saving')
+      setTimeout(() => setAutoSaveStatus('saved'), 1000)
+    }
+
+    const generateScimToken = () => {
+      const token = 'scim_' + Math.random().toString(36).substr(2, 32)
+      setProvisioningConfig(prev => ({ ...prev, scimToken: token }))
+      enhancedCopyToClipboard(token, 'SCIM Token')
+    }
+
+    const [provisioningTest, setProvisioningTest] = useState<{
+      status: 'idle' | 'testing' | 'success' | 'error'
+      message?: string
+      details?: string[]
+    }>({ status: 'idle' })
+
+    const handleTestProvisioning = async () => {
+      setProvisioningTest({ status: 'testing' })
+      
+      try {
+        // Simulate comprehensive provisioning tests
+        await new Promise(resolve => setTimeout(resolve, 3000))
+        
+        const testResults = []
+        
+        // Test JIT provisioning
+        if (provisioningConfig.jitEnabled) {
+          testResults.push('✓ JIT provisioning configuration valid')
+        }
+        
+        // Test SCIM if enabled
+        if (provisioningConfig.scimEnabled) {
+          if (provisioningConfig.scimToken) {
+            testResults.push('✓ SCIM endpoint accessible')
+            testResults.push('✓ SCIM token authentication successful')
+          } else {
+            testResults.push('✗ SCIM token required')
+          }
+        }
+        
+        // Test attribute mapping
+        const requiredMappings = ['email', 'firstName', 'lastName']
+        const validMappings = requiredMappings.filter(attr => {
+          const mapping = (provisioningConfig.attributeMapping as any)[attr]
+          return mapping && mapping.length > 0
+        })
+        
+        if (validMappings.length === requiredMappings.length) {
+          testResults.push('✓ Required attribute mappings configured')
+        } else {
+          testResults.push(`✗ Missing mappings: ${requiredMappings.filter(attr => !validMappings.includes(attr)).join(', ')}`)
+        }
+        
+        // Simulate random success/failure for demo
+        const isSuccess = Math.random() > 0.2
+        
+        if (isSuccess) {
+          setProvisioningTest({ 
+            status: 'success', 
+            message: 'Provisioning configuration validated successfully',
+            details: testResults
+          })
+        } else {
+          setProvisioningTest({ 
+            status: 'error', 
+            message: 'Some provisioning tests failed',
+            details: [...testResults, '✗ IdP connection timeout']
+          })
+        }
+      } catch (error) {
+        setProvisioningTest({ 
+          status: 'error', 
+          message: 'Test failed due to network error',
+          details: ['✗ Unable to reach provisioning endpoints']
+        })
+      }
+      
+      // Clear status after 10 seconds
+      setTimeout(() => {
+        setProvisioningTest({ status: 'idle' })
+      }, 10000)
+    }
+
+    return (
+      <InteractiveBackground>
+        {/* Header */}
+        <div className="border-b bg-white relative z-10">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{backgroundColor: '#581C60'}}>
+                  <span className="text-white font-bold text-sm">A</span>
+                </div>
+                <span className="text-xl font-semibold" style={{color: '#581C60'}}>Acme</span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {organizationName || 'Your Organization'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex items-center justify-center min-h-[calc(100vh-80px)] py-6 relative z-10">
+          <Card className="w-full max-w-4xl shadow-lg">
+            <CardHeader className="text-center space-y-2 pb-4">
+              <div className="flex items-center justify-center space-x-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary">
+                  <Users className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-semibold">
+                    User Provisioning & Directory Sync
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Configure how users are created, updated, and managed through SSO
+                  </CardDescription>
+                </div>
+              </div>
+              
+              {/* Auto-save status */}
+              {autoSaveStatus !== 'idle' && (
+                <div className="flex items-center justify-center space-x-1 text-xs text-muted-foreground">
+                  {autoSaveStatus === 'saving' ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-3 w-3 text-green-500" />
+                      <span className="text-green-500">Changes saved</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </CardHeader>
+
+            <form onSubmit={handleProvisioningSubmit}>
+              <CardContent className="space-y-6">
+                {/* JIT Provisioning Section */}
+                <div className="space-y-4">
+                  <h3 className="font-medium text-sm text-foreground border-b pb-1">
+                    Just-In-Time (JIT) Provisioning
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="jitEnabled"
+                          checked={provisioningConfig.jitEnabled}
+                          onChange={(e) => handleProvisioningFieldChange('jitEnabled', e.target.checked)}
+                          className="rounded border-input"
+                        />
+                        <Label htmlFor="jitEnabled" className="text-sm font-medium">Enable JIT Provisioning</Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground ml-6">
+                        Automatically create user accounts when users sign in via SSO for the first time
+                      </p>
+                      
+                      {provisioningConfig.jitEnabled && (
+                        <div className="ml-6 space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="jitCreateUsers"
+                              checked={provisioningConfig.jitCreateUsers}
+                              onChange={(e) => handleProvisioningFieldChange('jitCreateUsers', e.target.checked)}
+                              className="rounded border-input"
+                            />
+                            <Label htmlFor="jitCreateUsers" className="text-xs">Create new users</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="jitUpdateUsers"
+                              checked={provisioningConfig.jitUpdateUsers}
+                              onChange={(e) => handleProvisioningFieldChange('jitUpdateUsers', e.target.checked)}
+                              className="rounded border-input"
+                            />
+                            <Label htmlFor="jitUpdateUsers" className="text-xs">Update existing users</Label>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="jitDefaultRole" className="text-sm font-medium">Default Role for New Users</Label>
+                      <select
+                        id="jitDefaultRole"
+                        value={provisioningConfig.jitDefaultRole}
+                        onChange={(e) => handleProvisioningFieldChange('jitDefaultRole', e.target.value)}
+                        className="w-full h-8 px-2 text-xs border border-input bg-background rounded"
+                      >
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                        <option value="viewer">Viewer</option>
+                        <option value="editor">Editor</option>
+                      </select>
+                      <p className="text-xs text-muted-foreground">
+                        Role assigned to users created through JIT provisioning
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SCIM Configuration Section */}
+                <div className="space-y-4">
+                  <h3 className="font-medium text-sm text-foreground border-b pb-1">
+                    SCIM (System for Cross-domain Identity Management)
+                  </h3>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="scimEnabled"
+                      checked={provisioningConfig.scimEnabled}
+                      onChange={(e) => handleProvisioningFieldChange('scimEnabled', e.target.checked)}
+                      className="rounded border-input"
+                    />
+                    <Label htmlFor="scimEnabled" className="text-sm font-medium">Enable SCIM Provisioning</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground ml-6">
+                    Allow your identity provider to create, update, and delete users automatically
+                  </p>
+                  
+                  {provisioningConfig.scimEnabled && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="scimEndpoint" className="text-xs font-medium">SCIM Endpoint URL</Label>
+                        <div className="flex items-center space-x-1">
+                          <Input
+                            id="scimEndpoint"
+                            value={`https://api.mymapit.in/scim/v2/${organizationName?.toLowerCase() || 'org'}`}
+                            readOnly
+                            className="flex-1 bg-muted text-xs h-8"
+                          />
+                          <Button 
+                            type="button"
+                            variant="outline" 
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => enhancedCopyToClipboard(`https://api.mymapit.in/scim/v2/${organizationName?.toLowerCase() || 'org'}`, 'SCIM Endpoint')}
+                            title="Copy SCIM Endpoint"
+                          >
+                            {copySuccess === 'SCIM Endpoint' ? (
+                              <Check className="h-3 w-3 text-green-500" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="scimToken" className="text-xs font-medium">SCIM Bearer Token</Label>
+                        <div className="flex items-center space-x-1">
+                          <Input
+                            id="scimToken"
+                            type="password"
+                            value={provisioningConfig.scimToken}
+                            placeholder="Click generate to create token"
+                            readOnly
+                            className="flex-1 text-xs h-8"
+                          />
+                          <Button 
+                            type="button"
+                            variant="outline" 
+                            size="sm"
+                            className="h-8 px-2 text-xs"
+                            onClick={generateScimToken}
+                          >
+                            Generate
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Attribute Mapping Section */}
+                <div className="space-y-4">
+                  <h3 className="font-medium text-sm text-foreground border-b pb-1">
+                    Attribute Mapping
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Map identity provider claims to application user attributes
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries(provisioningConfig.attributeMapping).map(([attribute, claim]) => (
+                      <div key={attribute} className="space-y-1">
+                        <Label htmlFor={`mapping-${attribute}`} className="text-xs font-medium capitalize">
+                          {attribute === 'displayName' ? 'Display Name' : attribute}
+                        </Label>
+                        <Input
+                          id={`mapping-${attribute}`}
+                          value={claim}
+                          onChange={(e) => handleAttributeMappingChange(attribute, e.target.value)}
+                          placeholder={`IdP claim for ${attribute}`}
+                          className="text-xs h-8"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Deprovisioning Rules Section */}
+                <div className="space-y-4">
+                  <h3 className="font-medium text-sm text-foreground border-b pb-1">
+                    User Lifecycle & Deprovisioning
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="deprovisionOnSuspend"
+                          checked={provisioningConfig.deprovisionOnSuspend}
+                          onChange={(e) => handleProvisioningFieldChange('deprovisionOnSuspend', e.target.checked)}
+                          className="rounded border-input"
+                        />
+                        <Label htmlFor="deprovisionOnSuspend" className="text-xs">Suspend on IdP deactivation</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="deprovisionOnDelete"
+                          checked={provisioningConfig.deprovisionOnDelete}
+                          onChange={(e) => handleProvisioningFieldChange('deprovisionOnDelete', e.target.checked)}
+                          className="rounded border-input"
+                        />
+                        <Label htmlFor="deprovisionOnDelete" className="text-xs">Delete on IdP removal</Label>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="retentionDays" className="text-xs font-medium">Data Retention (days)</Label>
+                      <Input
+                        id="retentionDays"
+                        type="number"
+                        value={provisioningConfig.retentionDays}
+                        onChange={(e) => handleProvisioningFieldChange('retentionDays', parseInt(e.target.value))}
+                        min="1"
+                        max="365"
+                        className="text-xs h-8"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Days to retain user data after deletion
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Default Permissions</Label>
+                      <div className="space-y-1">
+                        {['read:profile', 'read:organization', 'write:profile', 'admin:users'].map(permission => (
+                          <div key={permission} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`perm-${permission}`}
+                              checked={provisioningConfig.defaultPermissions.includes(permission)}
+                              onChange={(e) => {
+                                const permissions = e.target.checked 
+                                  ? [...provisioningConfig.defaultPermissions, permission]
+                                  : provisioningConfig.defaultPermissions.filter(p => p !== permission)
+                                handleProvisioningFieldChange('defaultPermissions', permissions)
+                              }}
+                              className="rounded border-input"
+                            />
+                            <Label htmlFor={`perm-${permission}`} className="text-xs">{permission}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+
+              <CardFooter className="flex flex-col space-y-3 pt-4">
+                {/* Provisioning test status */}
+                {provisioningTest.status !== 'idle' && (
+                  <div className={`w-full p-3 rounded text-xs ${
+                    provisioningTest.status === 'testing' ? 'bg-muted text-muted-foreground' :
+                    provisioningTest.status === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
+                    'bg-red-50 text-red-700 border border-red-200'
+                  }`}>
+                    <div className="flex items-center space-x-2 mb-2">
+                      {provisioningTest.status === 'testing' ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : provisioningTest.status === 'success' ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <AlertCircle className="h-3 w-3" />
+                      )}
+                      <span className="font-medium">{provisioningTest.message || 'Testing provisioning...'}</span>
+                    </div>
+                    
+                    {provisioningTest.details && (
+                      <div className="space-y-1 ml-5">
+                        {provisioningTest.details.map((detail, index) => (
+                          <div key={index} className="text-xs">
+                            {detail}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <div className="flex space-x-2 w-full">
+                  <Button 
+                    type="submit"
+                    className="flex-1 h-9 bg-primary text-primary-foreground hover:bg-primary/90 text-sm"
+                  >
+                    Complete Setup
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={handleTestProvisioning}
+                    disabled={provisioningTest.status === 'testing'}
+                    className="flex-1 h-9 text-sm"
+                    title="Test provisioning configuration"
+                  >
+                    {provisioningTest.status === 'testing' ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        Testing...
+                      </>
+                    ) : (
+                      'Test Provisioning'
+                    )}
+                  </Button>
+                </div>
+              </CardFooter>
+            </form>
+          </Card>
+        </div>
+        
+        {/* Bottom navigation buttons */}
+        <div className="fixed bottom-4 left-4 z-20">
+          <Button variant="ghost" onClick={() => setStep('sso-config')} className="text-xs text-muted-foreground">
+            ← Back to SSO Config
+          </Button>
+        </div>
+        <div className="fixed bottom-4 right-4 z-20">
+          <Button variant="ghost" onClick={() => setStep('dashboard')} className="text-xs text-muted-foreground">
+            Skip to dashboard →
+          </Button>
+        </div>
+      </InteractiveBackground>
+    )
+  }
+
   if (step === 'dashboard') {
     return (
       <div className="min-h-screen bg-background">
@@ -1572,15 +2084,29 @@ MIIC...
                     <Shield className="h-6 w-6" style={{color: '#581C60'}} />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Configure SSO</h3>
-                    <p className="text-sm text-muted-foreground">Set up SAML or OIDC for your organization</p>
+                    <h3 className="font-semibold flex items-center space-x-2">
+                      <span>Configure SSO</span>
+                      {ssoProtocol && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                          <Check className="h-3 w-3 mr-1" />
+                          {ssoProtocol.toUpperCase()} Configured
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {ssoProtocol 
+                        ? `${ssoProtocol.toUpperCase()} SSO with user provisioning configured` 
+                        : 'Set up SAML or OIDC for your organization'
+                      }
+                    </p>
                   </div>
                   <Button 
-                    onClick={() => setStep('sso-protocol-selection')}
+                    onClick={() => setStep(ssoProtocol ? 'sso-config' : 'sso-protocol-selection')}
+                    variant={ssoProtocol ? "outline" : "default"}
                     className="w-full h-11" 
-                    style={{backgroundColor: '#581C60', borderColor: '#581C60'}}
+                    style={ssoProtocol ? {} : {backgroundColor: '#581C60', borderColor: '#581C60'}}
                   >
-                    Setup SSO
+                    {ssoProtocol ? 'Manage SSO' : 'Setup SSO'}
                   </Button>
                 </div>
               </Card>

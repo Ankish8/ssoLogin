@@ -25,14 +25,17 @@ npm run preview
 ## Architecture
 
 ### Core Flow Structure
-The application is built around a **multi-step state machine** with 7 distinct steps:
+The application is built around a **multi-step state machine** with 9 distinct steps:
 1. **signup** - Account creation form
 2. **email-sent** - Email verification waiting state
 3. **verified** - Email confirmation success
 4. **org-setup** - Organization setup introduction
 5. **domain-verification** - DNS verification process
 6. **org-creation** - Organization naming
-7. **dashboard** - Completion and next actions
+7. **dashboard** - Main admin dashboard
+8. **sso-protocol-selection** - Choose SAML or OIDC protocol
+9. **sso-config** - Configure SSO identity provider
+10. **user-provisioning** - Configure user provisioning and lifecycle
 
 ### Key Components
 
@@ -98,11 +101,19 @@ This prototype implements **Flow 1** from the complete Enterprise SSO specificat
 | **1.5: Organization Creation** | Create organization entity | ✅ Organization name input, role update logic |
 | **1.6: Flow Completion** | Redirect to admin dashboard | ✅ Dashboard with SSO setup, user management, settings cards |
 
-### Future Implementation Flows
-
 **Flow 2: SSO Configuration (CORPORATE_ADMIN)**
-- Phase 1: SAML/OIDC protocol configuration
-- Phase 2: User provisioning (JIT/SCIM) and directory sync
+
+**Current Implementation Status: ✅ COMPLETE**
+
+| Step | Action | Implementation Details |
+|------|--------|------------------------|
+| **2.1: Protocol Selection** | Choose SAML or OIDC | ✅ Interactive protocol cards with contextual help |
+| **2.2a: SAML Configuration** | Configure SAML identity provider | ✅ Entity ID, SSO URL, X.509 certificate with validation |
+| **2.2b: OIDC Configuration** | Configure OIDC identity provider | ✅ Issuer URL, Client ID/Secret with auto-completion |
+| **2.3: User Provisioning** | Configure JIT and SCIM provisioning | ✅ JIT settings, SCIM endpoints, attribute mapping |
+| **2.4: Lifecycle Management** | Set deprovisioning rules | ✅ User lifecycle, retention policies, default permissions |
+
+### Future Implementation Flows
 
 **Flow 3: User SSO Policy & Migration (CORPORATE_ADMIN)**
 - Enforce SSO-only login organization-wide
