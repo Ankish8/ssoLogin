@@ -1,0 +1,49 @@
+{
+  "hooks": [
+    {
+      "name": "brand-color-validation",
+      "event": "PostToolUse",
+      "matcher": {
+        "tool": "Edit",
+        "file_pattern": "*.{css,tsx,ts}"
+      },
+      "command": "cd /Users/ankish/Downloads/MA/MAPIT/SSO/signup-form && node .claude/scripts/validate-colors.js"
+    },
+    {
+      "name": "design-system-enforcement",
+      "event": "PostToolUse", 
+      "matcher": {
+        "tool": "Edit",
+        "file_pattern": "*.{tsx,ts}"
+      },
+      "command": "cd /Users/ankish/Downloads/MA/MAPIT/SSO/signup-form && node .claude/scripts/validate-components.js"
+    },
+    {
+      "name": "spacing-consistency",
+      "event": "PostToolUse",
+      "matcher": {
+        "tool": "Edit",
+        "file_pattern": "*.{css,tsx}"
+      },
+      "command": "cd /Users/ankish/Downloads/MA/MAPIT/SSO/signup-form && node .claude/scripts/validate-spacing.js"
+    },
+    {
+      "name": "typography-hierarchy",
+      "event": "PostToolUse",
+      "matcher": {
+        "tool": "Edit",
+        "file_pattern": "*.tsx"
+      },
+      "command": "cd /Users/ankish/Downloads/MA/MAPIT/SSO/signup-form && node .claude/scripts/validate-typography.js"
+    },
+    {
+      "name": "accessibility-check",
+      "event": "PostToolUse",
+      "matcher": {
+        "tool": "Edit",
+        "file_pattern": "*.tsx"
+      },
+      "command": "cd /Users/ankish/Downloads/MA/MAPIT/SSO/signup-form && node .claude/scripts/validate-accessibility.js"
+    }
+  ]
+}
